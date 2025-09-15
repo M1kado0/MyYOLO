@@ -115,3 +115,44 @@ class Backbone(nn.Module):
         out3 = self.sppf_9(x)
 
         return out1,out2,out3
+    
+
+class Upsample(nn.Module):
+    def __init__(self, scale_factor=2, mode='nearest'):
+        super().__init__()
+        self.scale_factor = scale_factor
+        self.mode = mode
+
+    def forward(self, x):
+        return nn.functional.interpolate(x, scale_factor=self.scale_factor, mode=self.mode)
+
+
+class Neck(nn.Module):
+    def __init__(self, version):
+        super().__init__()
+        d, w, r = yolo_params(version)
+        self.upsample = Upsample()
+        self.c2f_1 = C2f(int(512*w*(1+r)), int(512*w), num_bottlenecks=int(3*d), shortcut=False)
+        self.c2f_2 = C2f(int(768*w), int(256*w), num_bottlenecks=3*d, shortcut=False)
+        self.c2f_3 = C2f(int(768*w), int(512*w), num_bottlenecks=3*d, shortcut=False)
+        self.c2f_4 = C2f(int(512*w*(1+r)), int(512*w*r), num_bottlenecks=3*d, shortcut=False)
+        self.conv_1 = Conv(int(256*w), int(256*w), kernel_size=3, stride=2, padding=1)
+        self.conv_2 = Conv(int(512*w), int(512*w), kernel_size=3, stride=2, padding=1)
+
+
+    def forward(self, x_res_1, x_res_2, x):
+        res_1 = x
+        x = self.upsample(x)
+        x = torch.cat([x, x_res_2], dim=1)
+        res_2 = self.c2f_1(x)
+        x = self.upsample(res_2)
+        x = torch.cat([x, x_res_1], dim=1)
+        out1 = self.c2f_2(x)
+        x = self.conv_1(out1)
+        x = torch.cat([x, res_2], dim=1)
+        out2 = self.c2f_3(x)
+        x = self.conv_2(out2)
+        x = torch.cat([x, res_1], dim=1)
+        out3 = self.c2f_4(x)
+
+        return out1,out2,out3
