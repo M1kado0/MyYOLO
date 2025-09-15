@@ -251,3 +251,14 @@ class Head(nn.Module):
         return torch.cat(anchor_tensor), torch.cat(stride_tensor)
 
 
+class YOLO(nn.Module):
+    def __init__(self, version):
+        super.__init__()
+        self.backbone = Backbone(version)
+        self.neck = Neck(version)
+        self.head = Head(version)
+
+    def forward(self, x):
+        x = self.backbone(x)
+        x = self.neck(x[0], x[1], x[2])
+        return self.head(list(x))
