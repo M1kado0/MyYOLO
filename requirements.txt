@@ -3,3 +3,6 @@ torchvision
 numpy
 matplotlib
 opencv-python
+tqdm
+timm
+yaml
