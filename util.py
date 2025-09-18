@@ -151,7 +151,7 @@ def non_max_suppression(outputs, confidence_threshold=0.001, iou_threshold=0.7):
 
         # matrix nx6 (box, confidence, cls)
         box, cls = x.split((4, nc), 1)
-        box = xywh2xyxy(box)  # (cx, cy, w, h) to (x1, y1, x2, y2)
+        # box = xywh2xyxy(box)  # (cx, cy, w, h) to (x1, y1, x2, y2)
         if nc > 1:
             i, j = (cls > confidence_threshold).nonzero(as_tuple=False).T
             x = torch.cat((box[i], x[i, 4 + j, None], j[:, None].float()), 1)
